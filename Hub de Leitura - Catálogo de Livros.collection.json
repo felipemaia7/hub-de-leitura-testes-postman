@@ -1,0 +1,443 @@
+{
+  "info": {
+    "_postman_id": "e79d888b-4813-4fbc-a1a3-1acbe67c1f5a",
+    "name": "Hub de Leitura - Catálogo de Livros",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "58936053",
+    "_collection_link": "https://go.postman.co/collection/58936053-e79d888b-4813-4fbc-a1a3-1acbe67c1f5a?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Login Admin",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "   pm.test(\"Status 200\", () => pm.response.to.have.status(200));\r\n\r\n   const json = pm.response.json();\r\n   pm.test(\"Retorna um token\", () => pm.expect(json.token).to.be.a(\"string\"));\r\n\r\n   pm.environment.set(\"token\", json.token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "   {\r\n     \"email\": \"admin@biblioteca.com\",\r\n     \"password\": \"admin123\"\r\n   }",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Login Usuario",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "   pm.test(\"Status 200\", () => pm.response.to.have.status(200));\r\n\r\n   const json = pm.response.json();\r\n   pm.test(\"Retorna um token\", () => pm.expect(json.token).to.be.a(\"string\"));\r\n\r\n   const tokenLimpo = String(json.token).replace(/^Bearer\\s+/i, \"\");\r\n   pm.environment.set(\"tokenUser\", tokenLimpo);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "   {\r\n     \"email\": \"usuario@teste.com\",\r\n     \"password\": \"user123\"\r\n   }",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Listar Livros",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));\r\n\r\npm.test(\"Tempo de resposta < 1s\", () => pm.expect(pm.response.responseTime).to.be.below(1000));\r\n\r\npm.test(\"Resposta é JSON\", () => pm.response.to.be.json);\r\n\r\npm.test(\"Retorna uma lista com livros\", () => {\r\n  const json = pm.response.json();\r\n  const lista = Array.isArray(json) ? json : (json.books || json.data);\r\n  pm.expect(lista).to.be.an(\"array\");\r\n  pm.expect(lista.length).to.be.above(0);\r\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/books",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "books"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Cadastrar Livro",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const isbn = \"978-85-\" + Math.floor(Math.random() * 900000 + 100000) + \"-\" + Math.floor(Math.random() * 90 + 10) + \"-\" + Math.floor(Math.random() * 9);\r\npm.environment.set(\"isbnNovo\", isbn);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 201\", () => pm.response.to.have.status(201));\r\n\r\nconst json = pm.response.json();\r\n\r\npm.test(\"Mensagem de sucesso\", () => {\r\n  pm.expect(json.message).to.include(\"Livro criado com sucesso\");\r\n});\r\n\r\npm.test(\"Livro retornado corretamente\", () => {\r\n  pm.expect(json.book.id).to.exist;\r\n  pm.expect(json.book.author).to.eql(\"Aluísio Azevedo\");\r\n  pm.expect(json.book.category).to.eql(\"Literatura Brasileira\");\r\n});\r\n\r\npm.test(\"Estoque inicial correto\", () => {\r\n  pm.expect(json.book.total_copies).to.eql(4);\r\n  pm.expect(json.book.available_copies).to.eql(4);\r\n});\r\n\r\npm.environment.set(\"bookId\", json.book.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"title\": \"O Cortiço {{$timestamp}}\",\r\n  \"author\": \"Aluísio Azevedo\",\r\n  \"description\": \"Romance naturalista que retrata a vida em um cortiço\",\r\n  \"category\": \"Literatura Brasileira\",\r\n  \"isbn\": \"{{isbnNovo}}\",\r\n  \"editor\": \"Editora Ática\",\r\n  \"language\": \"Português\",\r\n  \"publication_year\": 1890,\r\n  \"pages\": 312,\r\n  \"format\": \"Físico\",\r\n  \"total_copies\": 4,\r\n  \"available_copies\": 4\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/books",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "books"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Livro por ID",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));\r\npm.test(\"Retorna o livro criado\", () => {\r\n  const json = pm.response.json();\r\n  const livro = json.book || json;\r\n  pm.expect(String(livro.id)).to.eql(String(pm.environment.get(\"bookId\")));\r\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/books/{{bookId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "books",
+            "{{bookId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Atualizar Livro",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"title\": \"O Cortiço - Edição Atualizada\",\r\n  \"author\": \"Aluísio Azevedo\",\r\n  \"description\": \"Romance naturalista que retrata a vida em um cortiço\",\r\n  \"category\": \"Literatura Brasileira\",\r\n  \"editor\": \"Editora Ática\",\r\n  \"language\": \"Português\",\r\n  \"publication_year\": 1890,\r\n  \"pages\": 312,\r\n  \"format\": \"Físico\",\r\n  \"total_copies\": 4,\r\n  \"available_copies\": 4\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/books/{{bookId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "books",
+            "{{bookId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Excluir Livro",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Livro excluído com sucesso\", () => {\r\n  pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/books/{{bookId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "books",
+            "{{bookId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Livro Excluído (cenário negativo 404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 404 após exclusão\", () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/books/{{bookId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "books",
+            "{{bookId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Cadastrar Livro Sem Token",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const isbn = \"978-85-\" + Math.floor(Math.random() * 900000 + 100000) + \"-\" + Math.floor(Math.random() * 90 + 10) + \"-\" + Math.floor(Math.random() * 9);\r\npm.environment.set(\"isbnNovo\", isbn);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 401\", () => pm.response.to.have.status(401));\r\npm.test(\"Erro MISSING_TOKEN\", () => pm.expect(pm.response.json().error).to.eql(\"MISSING_TOKEN\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"title\": \"O Cortiço {{$timestamp}}\",\r\n  \"author\": \"Aluísio Azevedo\",\r\n  \"description\": \"Romance naturalista que retrata a vida em um cortiço\",\r\n  \"category\": \"Literatura Brasileira\",\r\n  \"isbn\": \"{{isbnNovo}}\",\r\n  \"editor\": \"Editora Ática\",\r\n  \"language\": \"Português\",\r\n  \"publication_year\": 1890,\r\n  \"pages\": 312,\r\n  \"format\": \"Físico\",\r\n  \"total_copies\": 4,\r\n  \"available_copies\": 4\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/books",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "books"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Cadastrar Livro Usuario Comum",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const isbn = \"978-85-\" + Math.floor(Math.random() * 900000 + 100000) + \"-\" + Math.floor(Math.random() * 90 + 10) + \"-\" + Math.floor(Math.random() * 9);\r\npm.environment.set(\"isbnNovo\", isbn);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "   pm.test(\"Status 403 para usuário comum\", () => pm.response.to.have.status(403));\r\n\r\n   const json = pm.response.json();\r\n\r\n   pm.test(\"Erro ADMIN_REQUIRED\", () => {\r\n     pm.expect(json.error).to.eql(\"ADMIN_REQUIRED\");\r\n   });\r\n\r\n   pm.test(\"Mensagem informa que apenas admin pode\", () => {\r\n     pm.expect(json.message).to.include(\"administradores\");\r\n   });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenUser}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"title\": \"O Cortiço {{$timestamp}}\",\r\n  \"author\": \"Aluísio Azevedo\",\r\n  \"description\": \"Romance naturalista que retrata a vida em um cortiço\",\r\n  \"category\": \"Literatura Brasileira\",\r\n  \"isbn\": \"{{isbnNovo}}\",\r\n  \"editor\": \"Editora Ática\",\r\n  \"language\": \"Português\",\r\n  \"publication_year\": 1890,\r\n  \"pages\": 312,\r\n  \"format\": \"Físico\",\r\n  \"total_copies\": 4,\r\n  \"available_copies\": 4\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/books",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "books"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "",
+        "type": "string"
+      }
+    ]
+  }
+}
